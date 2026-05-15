@@ -2,7 +2,7 @@ namespace Domain.ShortLink;
 
 public sealed record ShortCode
 {
-    public string? Value {get;}
+    public string Value {get;}
 
     public ShortCode(string value)
     {

@@ -2,7 +2,7 @@ namespace Domain.ShortLink;
 
 public sealed record OriginalUrl
 {
-    public string? Value {get;}
+    public string Value {get;}
 
     public OriginalUrl(string value)
     {
