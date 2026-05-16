@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using Domain.ShortLink;
 using FluentAssertions;
 
-namespace Application.Tests.Domain;
+namespace Domain.Tests.Domain;
 
 public class OriginalUrlTests
 {
