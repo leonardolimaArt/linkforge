@@ -22,6 +22,6 @@ public class ShortLinkRepository : IShortLinkRepository
 
     public async Task<ShortLink?> GetByShortCodeAsync(string shortCode, CancellationToken cancellationToken = default)
     {
-        return await _context.ShortLinks.FirstOrDefaultAsync(x => x.ShortCode.Value == shortCode, cancellationToken);
+        return await _context.ShortLinks.FirstOrDefaultAsync(x => x.ShortCode == new ShortCode(shortCode), cancellationToken);
     }
 }
