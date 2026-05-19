@@ -45,7 +45,7 @@ jobs:
     name: Deploy to QAS
     runs-on: ubuntu-latest
     needs: tests
-    environment: LINKFORGE/development
+    environment: LINKFORGE / development
     if: github.event.inputs.environment == 'development'
 
     steps:
@@ -64,7 +64,7 @@ jobs:
     name: Deploy to PRD
     runs-on: ubuntu-latest
     needs: tests
-    environment: LINKFORGE/production
+    environment: LINKFORGE / production
     if: github.event.inputs.environment == 'production'
 
     steps:
