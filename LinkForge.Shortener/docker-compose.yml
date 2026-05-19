@@ -2,7 +2,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: src/Api/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
