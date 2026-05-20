@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faGithub, faLinkedin } from '@fortawesome/free-brands-svg-icons'
 import { useState } from "react"
 import './App.css'
 
@@ -56,7 +58,7 @@ function App(){
         <input
           className="input"
           type="text"
-          placeholder="Insira com força o seu link aqui"
+          placeholder="Insira com força o seu link aqui 🥵"
           value={generatedLink ? shortUrl : url}
           onChange={(e) => setUrl(e.target.value)}
           readOnly={generatedLink}
@@ -71,15 +73,29 @@ function App(){
           onClick={handleGenerate}
           disabled={!url || loading}
           >
-            {loading ? '...' : 'Gerar Link!'}
+            {loading ? '...' : 'Forjar Link!'}
           </button>
         )}
       </div>
       {generatedLink && (
         <button className="resetButton" onClick={handleReset}>
-          Gerar outro Link
+          Forjar outro Link
         </button>
       )}
+
+      <div className="socials">
+        <p className="socialsLabel">2026 - Desenvolvido por Leonardo Lima</p>
+
+        <div className="socialsIcons">
+          <a href="https://github.com/leonardolimaArt" target="_blank" className="socialButton" aria-label="Github">
+            <FontAwesomeIcon icon={faGithub} size="lg"/>
+          </a>
+          <a href="https://www.linkedin.com/in/leonardolima-art" target="_blank" className="socialButton" aria-label="LinkedIn">
+            <FontAwesomeIcon icon={faLinkedin} size="lg"/>
+          </a>
+        </div>
+      </div>
+
     </div>
   )
 }
