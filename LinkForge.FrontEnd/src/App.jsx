@@ -58,7 +58,7 @@ function App(){
         <input
           className="input"
           type="text"
-          placeholder="Insira com força o seu link aqui 🥵"
+          placeholder="Insira seu link aqui para forjar um novo 🔥🔨"
           value={generatedLink ? shortUrl : url}
           onChange={(e) => setUrl(e.target.value)}
           readOnly={generatedLink}
