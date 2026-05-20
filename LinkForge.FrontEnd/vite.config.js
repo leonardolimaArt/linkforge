@@ -10,6 +10,15 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/r':{
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '^/[0-9a-f]{8}$': {
+        target: 'http://localhost:8080',
+        rewrite: (path) => `/r${path}`,
+        changeOrigin: true,
+      }
     },
   },
 })
