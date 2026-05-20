@@ -140,3 +140,39 @@
 @keyframes blink{
     50% {border-color: transparent;}
 }
+
+@media (max-width: 768px) {
+    .title {
+        font-size: 4.5rem;
+        letter-spacing: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 16px;
+        gap: 16px;
+    }
+
+    .title {
+        font-size: 5rem;
+        letter-spacing: 2px;
+        border-right-width: 10px;
+    }
+
+    .input {
+        padding: 11px 18px;
+        padding-right: 70px;
+        font-size: 0.9rem;
+    }
+
+    .button {
+        padding: 13px 20px;
+        margin-left: -55px;
+        font-size: 0.9rem;
+    }
+
+    .socialsLabel {
+        font-size: 0.75rem;
+    }
+}
