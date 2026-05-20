@@ -55,14 +55,24 @@ function App(){
     <div className="container">
       <h1 className="title">LINKFORGE</h1>
       <div className="inputSearch">
-        <input
-          className="input"
-          type="text"
-          placeholder="Insira seu link aqui para forjar um novo 🔥🔨"
-          value={generatedLink ? shortUrl : url}
-          onChange={(e) => setUrl(e.target.value)}
-          readOnly={generatedLink}
-        />
+        {generatedLink ? (
+          <a
+            className='input inputLink'
+            href={shortUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {shortUrl}
+          </a>
+        ) : (
+          <input
+            className="input"
+            type="text"
+            placeholder="Insira seu link aqui para forjar um novo 🔥🔨"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        )}
         {generatedLink ? (
           <button className="button" onClick={handleCopy}>
             {copied ? 'Copiado!' : 'Copiar'}
