@@ -9,6 +9,8 @@ services:
       - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - Cors__AllowedOrigins__0=${Cors__AllowedOrigins__0}
+      - RateLimiting__PermitLimit=${RateLimiting__PermitLimit}
+      - RateLimiting__WindowSeconds=${RateLimiting__WindowSeconds}
     depends_on:
       db:
         condition: service_healthy
