@@ -1,4 +1,5 @@
 using Application.Abstractions;
+using Infrastructure.Cache;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,11 @@ public static class DependencyInjection
     {
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
         services.AddScoped<IShortLinkRepository, ShortLinkRepository>();
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
+        services.AddScoped<ILinkCache, LinkCache>();
         return services;
     }
 }

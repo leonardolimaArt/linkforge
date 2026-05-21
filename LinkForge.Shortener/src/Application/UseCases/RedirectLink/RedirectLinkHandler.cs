@@ -2,19 +2,19 @@ using Application.Abstractions;
 
 namespace Application.UseCases.RedirectLink;
 
-public class RedirectLinkHandler
+public class RedirectLinkHandler(IShortLinkRepository repository, ILinkCache cache)
 {
-    
-    private readonly IShortLinkRepository _repository;
-
-    public RedirectLinkHandler(IShortLinkRepository repository)
-    {
-        _repository = repository;
-    }
-
     public async Task<string?> HandleAsync(RedirectLinkQuery query, CancellationToken cancellationToken = default)
     {
-        var shortLink = await _repository.GetByShortCodeAsync(query.ShortCode, cancellationToken);
-        return shortLink?.OriginalUrl.Value;
+        var cached = await cache.GetAsync(query.ShortCode, cancellationToken);
+        if(cached is not null)
+            return cached;
+
+        var shortLink = await repository.GetByShortCodeAsync(query.ShortCode, cancellationToken);
+        if(shortLink is null)
+            return null;
+
+        await cache.SetAsync(query.ShortCode, shortLink.OriginalUrl.Value, TimeSpan.FromHours(1), cancellationToken);
+        return shortLink.OriginalUrl.Value;
     }
 }
