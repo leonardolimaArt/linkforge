@@ -75,7 +75,7 @@ function App(){
           <input
             className="input"
             type="text"
-            placeholder="Insira seu link aqui para forjar um novo 🔥🔨"
+            placeholder="Insira seu link para ser forjado 🔥🔨"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
