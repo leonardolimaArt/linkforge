@@ -10,10 +10,12 @@ function App(){
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const generatedLink = shortUrl !== ''
+  const [error, setError] = useState('')
   
   async function handleGenerate() {
     if (loading) return
   
+    setError('')
     setLoading(true)
 
     try{
@@ -26,14 +28,18 @@ function App(){
       })
 
       if (!response.ok){
-        throw new Error('Erro ao gerar o link. Verifique se a URL é válida.')
+        const message = response.status === 429
+          ? 'Calma lá amigão, tá rapidão ein? Limite de requisições atingido. Tente novamente em 10 minutos...'
+          : 'Erro ao gerar o link. Verifique se a URL é válida.'
+        setError(message)
+        return
       }
 
       const data = await response.json()
 
       setShortUrl(`${window.location.origin}/${data.shortCode}`)
     }catch (error){
-      alert(error.message)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -48,6 +54,7 @@ function App(){
   function handleReset(){
     setUrl('')
     setShortUrl('')
+    setError('')
     setCopied(false)
   }
 
@@ -92,7 +99,7 @@ function App(){
           Forjar outro Link
         </button>
       )}
-
+      {error && <p className="errorMessage">{error}</p>}
       <div className="socials">
         <p className="socialsLabel">2026 - Desenvolvido por Leonardo Lima</p>
 
