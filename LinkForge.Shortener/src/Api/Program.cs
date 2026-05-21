@@ -1,3 +1,4 @@
+using Api.Middleware;
 using Application;
 using Infrastructure;
 using Infrastructure.Persistence;
@@ -49,6 +50,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseRateLimiter();
+app.UseMiddleware<ApiKeyMiddleWare>();
 app.MapControllers();
 
 using(var scope = app.Services.CreateScope())
