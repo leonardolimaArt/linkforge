@@ -2,6 +2,7 @@ using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 
@@ -20,14 +21,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     {
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
+            var dbdescriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
 
-            if (descriptor is not null)
-                services.Remove(descriptor);
+            if (dbdescriptor is not null)
+                services.Remove(dbdescriptor);
 
             services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(_container.GetConnectionString()));
+
+            var redisDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IDistributedCache));
+            if(redisDescriptor is not null)
+                services.Remove(redisDescriptor);
+            services.AddDistributedMemoryCache();
         });
     }
 

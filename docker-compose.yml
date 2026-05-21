@@ -1,4 +1,10 @@
 services:
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
   api:
     build:
       context: ./LinkForge.Shortener
@@ -12,9 +18,12 @@ services:
       - RateLimiting__PermitLimit=${RateLimiting__PermitLimit}
       - RateLimiting__WindowSeconds=${RateLimiting__WindowSeconds}
       - API_KEY=${API_KEY}
+      - ConnectionStrings__Redis=redis:6379
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
         
   frontend:
     build:
