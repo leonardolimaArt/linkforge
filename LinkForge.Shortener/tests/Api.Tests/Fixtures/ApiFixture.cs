@@ -22,6 +22,7 @@ public class ApiFixture : IAsyncLifetime
         {
             AllowAutoRedirect = false
         });
+        Client.DefaultRequestHeaders.Add("X-Api-Key", "dev-api-key-local");
     }
 
     public async Task DisposeAsync()
