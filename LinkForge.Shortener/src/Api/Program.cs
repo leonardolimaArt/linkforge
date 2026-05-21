@@ -47,7 +47,6 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseRateLimiter();
 app.UseMiddleware<ApiKeyMiddleWare>();
