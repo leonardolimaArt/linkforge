@@ -47,7 +47,7 @@ func main() {
 	redirectHandler := handler.NewRedirectHandler(svc)
 	healthHandler := handler.NewHealthHandler(pool, redisClient)
 
-	engine := server.New(redirectHandler, healthHandler)
+	engine := server.New(cfg, logger, redirectHandler, healthHandler)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

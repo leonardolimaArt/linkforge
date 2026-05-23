@@ -2,17 +2,19 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	DatabaseURL	string
-	RedisURL string
-	Port	string
-	LogLevel	string
-	CORSAllowedOrigins	string
-	RateLimitRPS	float64
-	RateLimitBurst	int
+	DatabaseURL        string
+	RedisURL           string
+	Port               string
+	LogLevel           string
+	CORSAllowedOrigins string
+	RateLimitRPS       float64
+	RateLimitBurst     int
+	AdminAPIKey        string
 }
 
 func Load() (*Config, error) {
@@ -24,14 +26,14 @@ func Load() (*Config, error) {
 	viper.SetDefault("RATE_LIMIT_BURST", 200)
 
 	cfg := &Config{
-		DatabaseURL:	viper.GetString("DATABASE_URL"),
-		RedisURL:	viper.GetString("REDIS_URL"),
-		Port:	viper.GetString("PORT"),
-		LogLevel:	viper.GetString("LOG_LEVEL"),
-		CORSAllowedOrigins:	viper.GetString("CORS_ALLOWED_ORIGINS"),
-		RateLimitRPS: viper.GetFloat64("RATE_LIMIT_RPS"),
-		RateLimitBurst:	viper.GetInt("RATE_LIMIT_BURST"),
-
+		DatabaseURL:        viper.GetString("DATABASE_URL"),
+		RedisURL:           viper.GetString("REDIS_URL"),
+		Port:               viper.GetString("PORT"),
+		LogLevel:           viper.GetString("LOG_LEVEL"),
+		CORSAllowedOrigins: viper.GetString("CORS_ALLOWED_ORIGINS"),
+		RateLimitRPS:       viper.GetFloat64("RATE_LIMIT_RPS"),
+		RateLimitBurst:     viper.GetInt("RATE_LIMIT_BURST"),
+		AdminAPIKey:        viper.GetString("ADMIN_API_KEY"),
 	}
 
 	if cfg.DatabaseURL == "" {
