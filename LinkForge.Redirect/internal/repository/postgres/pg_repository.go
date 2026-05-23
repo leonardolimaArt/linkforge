@@ -13,7 +13,7 @@ type PgRepository struct {
 	queries *Queries
 }
 
-func NewPGRepository(queries *Queries) *PgRepository {
+func NewPgRepository(queries *Queries) *PgRepository {
 	return &PgRepository{queries: queries}
 }
 
@@ -32,9 +32,9 @@ func (r *PgRepository) GetByShortCode(ctx context.Context, shortCode string) (*d
 	}
 
 	return &domain.ShortLink{
-		ID:	id,
+		ID:          id,
 		OriginalURL: row.OriginalUrl,
-		ShortCode: row.ShortCode,
-		CreatedAt: row.CreatedAt.Time,
+		ShortCode:   row.ShortCode,
+		CreatedAt:   row.CreatedAt.Time,
 	}, nil
 }
