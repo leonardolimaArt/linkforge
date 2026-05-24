@@ -38,7 +38,11 @@ func main() {
 
 	defer pool.Close()
 
-	redisClient := cache.NewRedisClient(cfg.RedisURL)
+	redisClient, err := cache.NewRedisClient(cfg.RedisURL)
+	if err != nil {
+		logger.Error("failed to create redis client", "error", err)
+		os.Exit(1)
+	}
 	defer redisClient.Close()
 
 	queries := postgres.New(pool)
