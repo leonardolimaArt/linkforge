@@ -2,6 +2,7 @@ using Application.Abstractions;
 using Application.UseCases.ShortenLink;
 using Domain.ShortLink;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Application.Tests.UseCases.ShortenLink;
@@ -10,11 +11,17 @@ public class ShortenLinkHandlerTests
 {
     private readonly IShortLinkRepository _repository;
     private readonly ShortenLinkHandler _handler;
+    private readonly ILinkCache _cache;
+    private readonly IEventPublisher _publisher;
+    private readonly ILogger<ShortenLinkHandler> _logger;
 
     public ShortenLinkHandlerTests()
     {
         _repository = Substitute.For<IShortLinkRepository>();
-        _handler = new ShortenLinkHandler(_repository);
+        _cache = Substitute.For<ILinkCache>();
+        _publisher = Substitute.For<IEventPublisher>();
+        _logger = Substitute.For<ILogger<ShortenLinkHandler>>();
+        _handler = new ShortenLinkHandler(_repository, _cache, _publisher, _logger);
     }
 
     [Fact]

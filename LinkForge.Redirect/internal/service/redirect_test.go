@@ -14,13 +14,23 @@ import (
 
 // Mocks
 type mockRepo struct {
-	getFn    func(ctx context.Context, code string) (*domain.ShortLink, error)
-	getCalls int32
+	getFn       func(ctx context.Context, code string) (*domain.ShortLink, error)
+	upsertFn    func(ctx context.Context, link *domain.ShortLink) error
+	getCalls    int32
+	upsertCalls int32
 }
 
 func (m *mockRepo) GetByShortCode(ctx context.Context, code string) (*domain.ShortLink, error) {
 	atomic.AddInt32(&m.getCalls, 1)
 	return m.getFn(ctx, code)
+}
+
+func (m *mockRepo) Upsert(ctx context.Context, link *domain.ShortLink) error {
+	atomic.AddInt32(&m.upsertCalls, 1)
+	if m.upsertFn != nil {
+		return m.upsertFn(ctx, link)
+	}
+	return nil
 }
 
 type mockCache struct {
