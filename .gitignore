@@ -94,3 +94,10 @@ nunit-*.xml
 # OS
 Thumbs.db
 .DS_Store
+
+# Go
+*.test
+*.out
+coverage.out
+coverage.html
+vendor/

@@ -1,0 +1,10 @@
+.git
+.gitignore
+test/
+**/*_test.go
+bin/
+*.exe
+.vscode/
+.idea/
+*.md
+PLAN.md
