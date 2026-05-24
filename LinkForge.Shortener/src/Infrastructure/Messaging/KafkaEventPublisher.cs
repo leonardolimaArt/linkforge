@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Application.Abstractions;
+using Application.Events;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,7 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
     private readonly IProducer<string, string> _producer;
     private readonly ILogger<KafkaEventPublisher> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly Dictionary<Type, string> _topicByType;
 
     public KafkaEventPublisher(IOptions<KafkaSettings> settings, ILogger<KafkaEventPublisher> logger)
     {
@@ -18,6 +20,11 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        _topicByType = new Dictionary<Type, string>
+        {
+            {typeof(LinkCreatedEvent), settings.Value.LinksCreatedTopic}
         };
 
         var config = new ProducerConfig
@@ -41,8 +48,15 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
         _producer = new ProducerBuilder<string, string>(config).Build();
     }
 
-    public async Task PublishAsync<T>(string topic, string key, T payload, CancellationToken cancellationToken = default)
+    public async Task PublishAsync<T>(string key, T payload, CancellationToken cancellationToken = default)
     {
+
+        if(!_topicByType.TryGetValue(typeof(T), out var topic) || string.IsNullOrEmpty(topic))
+        {
+            _logger.LogError("No topic configured for event type {EventType}", typeof(T).Name);
+            return;
+        }
+
         try
         {
             var json = JsonSerializer.Serialize(payload, _jsonOptions);

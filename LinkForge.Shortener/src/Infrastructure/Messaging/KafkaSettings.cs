@@ -7,4 +7,5 @@ public class KafkaSettings
 
     public string SaslUsername {get; set;} = string.Empty;
     public string SaslPassword {get; set;} = string.Empty;
+    public string LinksCreatedTopic {get; set;} = string.Empty;
 }
