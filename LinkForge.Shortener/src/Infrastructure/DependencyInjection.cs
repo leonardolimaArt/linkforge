@@ -1,5 +1,6 @@
 using Application.Abstractions;
 using Infrastructure.Cache;
+using Infrastructure.Messaging;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,10 @@ public static class DependencyInjection
             options.Configuration = configuration.GetConnectionString("Redis");
         });
         services.AddScoped<ILinkCache, LinkCache>();
+
+        services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
+        services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+        
         return services;
     }
 }

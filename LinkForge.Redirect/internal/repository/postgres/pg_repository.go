@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/domain"
 )
 
@@ -37,4 +38,20 @@ func (r *PgRepository) GetByShortCode(ctx context.Context, shortCode string) (*d
 		ShortCode:   row.ShortCode,
 		CreatedAt:   row.CreatedAt.Time,
 	}, nil
+}
+
+func (r *PgRepository) Upsert(ctx context.Context, link *domain.ShortLink) error {
+	params := UpsertShortLinkParams{
+		ID: pgtype.UUID{
+			Bytes: link.ID,
+			Valid: true,
+		},
+		OriginalUrl: link.OriginalURL,
+		ShortCode:   link.ShortCode,
+		CreatedAt: pgtype.Timestamptz{
+			Time:  link.CreatedAt,
+			Valid: true,
+		},
+	}
+	return r.queries.UpsertShortLink(ctx, params)
 }

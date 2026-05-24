@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -15,10 +16,16 @@ func NewRedisCache(client *redis.Client) *RedisCache {
 	return &RedisCache{client: client}
 }
 
-func NewRedisClient(addr string) *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr: addr,
-	})
+func NewRedisClient(connStr string) (*redis.Client, error) {
+	if strings.HasPrefix(connStr, "redis://") || strings.HasPrefix(connStr, "rediss://") {
+		opts, err := redis.ParseURL(connStr)
+		if err != nil {
+			return nil, err
+		}
+		return redis.NewClient(opts), nil
+	}
+
+	return redis.NewClient(&redis.Options{Addr: connStr}), nil
 }
 
 func (c *RedisCache) Get(ctx context.Context, key string) (string, error) {

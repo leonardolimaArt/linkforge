@@ -7,6 +7,8 @@ package postgres
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getByShortCode = `-- name: GetByShortCode :one
@@ -25,4 +27,27 @@ func (q *Queries) GetByShortCode(ctx context.Context, shortCode string) (ShortLi
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const upsertShortLink = `-- name: UpsertShortLink :exec
+INSERT INTO short_links (id, original_url, short_code, created_at)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (short_code) DO NOTHING
+`
+
+type UpsertShortLinkParams struct {
+	ID          pgtype.UUID        `json:"id"`
+	OriginalUrl string             `json:"original_url"`
+	ShortCode   string             `json:"short_code"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) UpsertShortLink(ctx context.Context, arg UpsertShortLinkParams) error {
+	_, err := q.db.Exec(ctx, upsertShortLink,
+		arg.ID,
+		arg.OriginalUrl,
+		arg.ShortCode,
+		arg.CreatedAt,
+	)
+	return err
 }
