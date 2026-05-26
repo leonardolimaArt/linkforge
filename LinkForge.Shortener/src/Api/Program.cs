@@ -1,17 +1,31 @@
+using Api.Grpc;
 using Api.Middleware;
 using Application;
 using Infrastructure;
 using Infrastructure.Persistence;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080, listen => listen.Protocols = HttpProtocols.Http1);
+    options.ListenAnyIP(5001, listen => listen.Protocols = HttpProtocols.Http2);
+});
+
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddGrpc(options =>
+{
+    options.Interceptors.Add<ApiKeyInterceptor>();
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+});
 
 builder.Services.AddCors(options =>
 {
@@ -61,6 +75,7 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseMiddleware<ApiKeyMiddleWare>();
 app.MapControllers();
+app.MapGrpcService<LinkServiceImpl>();
 
 using(var scope = app.Services.CreateScope())
 {
