@@ -38,6 +38,7 @@ func NewRedirectService(repo repository.Repository, cache cache.Cache, origin or
 func (s *RedirectService) Resolve(ctx context.Context, shortCode string) (string, error) {
 	url, err := s.cache.Get(ctx, cacheKeyPrefix+shortCode)
 	if err == nil && url != "" {
+		s.logger.Info("L1 cache hit", "short_code", shortCode)
 		return url, nil
 	}
 
@@ -47,10 +48,11 @@ func (s *RedirectService) Resolve(ctx context.Context, shortCode string) (string
 			return "", err
 		}
 		if link != nil {
+			s.logger.Info("L2 postgres hit", "short_code", shortCode)
 			_ = s.cache.Set(ctx, cacheKeyPrefix+shortCode, link.OriginalURL, cacheTTL)
 			return link.OriginalURL, nil
 		}
-		s.logger.Info("redis and postgres miss, falling back to origin", "short_code", shortCode)
+		s.logger.Info("L3 grpc fallback", "short_code", shortCode)
 		originLink, err := s.origin.Resolve(ctx, shortCode)
 		if errors.Is(err, origin.ErrOriginNotFound) {
 			return "", ErrNotFound

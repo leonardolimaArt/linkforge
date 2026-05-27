@@ -132,7 +132,7 @@ func (c *KafkaConsumer) process(ctx context.Context, msg kafka.Message) error {
 		)
 	}
 
-	c.logger.Debug("event processed",
+	c.logger.Info("event processed",
 		"code", evt.ShortCode,
 		"offset", msg.Offset,
 	)

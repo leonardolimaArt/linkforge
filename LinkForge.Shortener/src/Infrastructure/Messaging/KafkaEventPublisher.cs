@@ -68,7 +68,7 @@ public class KafkaEventPublisher : IEventPublisher, IDisposable
 
             var result = await _producer.ProduceAsync(topic, message, cancellationToken);
 
-            _logger.LogDebug("Published to {Topic} partition {Partition} offset {Offset}", result.Topic, result.Partition.Value, result.Offset.Value);
+            _logger.LogInformation("Kafka event published topic={Topic} key={Key} partition={Partition} offset={Offset}", result.Topic, key, result.Partition.Value, result.Offset.Value);
 
         } catch (ProduceException<string, string> ex)
         {
