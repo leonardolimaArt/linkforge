@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -19,6 +20,9 @@ type Config struct {
 	KafkaBrokers       []string
 	KafkaTopic         string
 	KafkaGroupID       string
+	ShortenerGRPCAddr  string
+	APIKey             string
+	OriginTimeout      time.Duration
 }
 
 func Load() (*Config, error) {
@@ -29,6 +33,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("RATE_LIMIT_RPS", 100)
 	viper.SetDefault("RATE_LIMIT_BURST", 200)
+	viper.SetDefault("ORIGIN_TIMEOUT_SECONDS", 2)
 
 	cfg := &Config{
 		DatabaseURL:        viper.GetString("DATABASE_URL"),
@@ -42,6 +47,9 @@ func Load() (*Config, error) {
 		KafkaBrokers:       strings.Split(viper.GetString("KAFKA_BROKERS"), ","),
 		KafkaTopic:         viper.GetString("KAFKA_TOPIC"),
 		KafkaGroupID:       viper.GetString("KAFKA_GROUP_ID"),
+		ShortenerGRPCAddr:  viper.GetString("SHORTENER_GRPC_ADDR"),
+		APIKey:             viper.GetString("API_KEY"),
+		OriginTimeout:      time.Duration(viper.GetInt("ORIGIN_TIMEOUT_SECONDS")) * time.Second,
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -55,6 +63,12 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.KafkaBrokers) == 0 || cfg.KafkaBrokers[0] == "" {
 		return nil, fmt.Errorf("KAFKA_BROKERS is required")
+	}
+	if cfg.ShortenerGRPCAddr == "" {
+		return nil, fmt.Errorf("SHORTENER_GRPC_ADDR is required")
+	}
+	if cfg.APIKey == "" {
+		return nil, fmt.Errorf("API_KEY  is required")
 	}
 
 	return cfg, nil
