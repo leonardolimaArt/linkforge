@@ -13,10 +13,10 @@ public class ResolveShortLinkHandler(IShortLinkRepository repository, ILinkCache
         {
             logger.LogInformation("Cache HIT for {ShortCode}", query.ShortCode);
             return new ResolveShortLinkResult(
-                Id: Guid.Empty,
-                ShortCode: query.ShortCode,
-                OriginalUrl: cachedUrl,
-                CreatedAt: default);
+                Id: cachedUrl.Id,
+                ShortCode: cachedUrl.ShortCode,
+                OriginalUrl: cachedUrl.OriginalUrl,
+                CreatedAt: cachedUrl.CreatedAt);
         }
 
         logger.LogInformation("Cahce MISS for {ShortCode}", query.ShortCode);
@@ -24,7 +24,7 @@ public class ResolveShortLinkHandler(IShortLinkRepository repository, ILinkCache
         if(shortLink is null)
             return null;
 
-        await cache.SetAsync(query.ShortCode, shortLink.OriginalUrl.Value, CacheTtl, cancellationToken);
+        await cache.SetAsync(new CachedShortLink(Id: shortLink.Id, ShortCode: shortLink.ShortCode.Value, OriginalUrl: shortLink.OriginalUrl.Value, CreatedAt: shortLink.CreatedAt), CacheTtl, cancellationToken);
 
         return new ResolveShortLinkResult(
             Id: shortLink.Id,

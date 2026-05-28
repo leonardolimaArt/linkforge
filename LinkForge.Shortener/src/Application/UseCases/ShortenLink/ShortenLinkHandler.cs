@@ -34,7 +34,7 @@ public class ShortenLinkHandler
 
         try
         {
-            await _cache.SetAsync(shortCode.Value, originalUrl.Value, CacheTtl1, cancellationToken);
+            await _cache.SetAsync(new CachedShortLink(Id: shortLink.Id, ShortCode: shortCode.Value, OriginalUrl: originalUrl.Value, CreatedAt: shortLink.CreatedAt), CacheTtl1, cancellationToken);
         }catch(Exception ex)
         {
             _logger.LogWarning(ex, "Cache pre-population failed for {Code}", shortCode.Value);

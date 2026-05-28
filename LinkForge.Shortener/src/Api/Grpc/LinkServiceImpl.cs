@@ -24,10 +24,10 @@ public class LinkServiceImpl(ResolveShortLinkHandler resolveHandler, ILogger<Lin
 
         return new ResolveResponse
         {
-            Id = result.Id == Guid.Empty ? string.Empty : result.Id.ToString(),
+            Id = result.Id.ToString(),
             ShortCode = result.ShortCode,
             OriginalUrl = result.OriginalUrl,
-            CreatedAt = result.CreatedAt == default ? null : Timestamp.FromDateTimeOffset(result.CreatedAt)
+            CreatedAt = Timestamp.FromDateTimeOffset(result.CreatedAt)
         };
     }
 }
