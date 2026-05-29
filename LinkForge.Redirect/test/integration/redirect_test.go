@@ -24,7 +24,9 @@ import (
 
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/cache"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/config"
+	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/domain"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/handler"
+	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/origin"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/repository/postgres"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/server"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/service"
@@ -44,6 +46,14 @@ var (
 	testRedis  *redis.Client
 	testRouter *gin.Engine
 )
+
+type noopOrigin struct{}
+
+func (noopOrigin) Resolve(_ context.Context, _ string) (*domain.ShortLink, error) {
+	return nil, origin.ErrOriginNotFound
+}
+
+func (noopOrigin) Close() error { return nil }
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -104,7 +114,8 @@ func TestMain(m *testing.M) {
 	queries := postgres.New(testPool)
 	repo := postgres.NewPgRepository(queries)
 	redisCache := cache.NewRedisCache(testRedis)
-	svc := service.NewRedirectService(repo, redisCache)
+	testLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := service.NewRedirectService(repo, redisCache, noopOrigin{}, testLogger)
 	redirectHandler := handler.NewRedirectHandler(svc)
 	healthHandler := handler.NewHealthHandler(testPool, testRedis)
 
@@ -115,7 +126,6 @@ func TestMain(m *testing.M) {
 		AdminAPIKey:        "",
 	}
 
-	testLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	gin.SetMode(gin.TestMode)
 	testRouter = server.New(testCfg, testLogger, redirectHandler, healthHandler)
 

@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
+	"github.com/google/uuid"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/cache"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/origin"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/repository"
@@ -63,10 +64,12 @@ func (s *RedirectService) Resolve(ctx context.Context, shortCode string) (string
 			return "", err
 		}
 
-		if upsertErr := s.repo.Upsert(ctx, originLink); upsertErr != nil {
-			s.logger.Warn("upsert after origin fallback failed",
-				"error", upsertErr,
-				"short_code", shortCode)
+		if originLink.ID != uuid.Nil {
+			if upsertErr := s.repo.Upsert(ctx, originLink); upsertErr != nil {
+				s.logger.Warn("upsert after origin fallback failed",
+					"error", upsertErr,
+					"short_code", shortCode)
+			}
 		}
 
 		_ = s.cache.Set(ctx, cacheKeyPrefix+shortCode, originLink.OriginalURL, cacheTTL)
