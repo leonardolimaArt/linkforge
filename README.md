@@ -3,52 +3,52 @@
 </p>
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/lang-PT--BR-green?style=for-the-badge" alt="PT-BR" /></a>
-  <a href="README.en.md"><img src="https://img.shields.io/badge/lang-EN-lightgrey?style=for-the-badge" alt="EN" /></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/lang-EN-lightgrey?style=for-the-badge" alt="EN" /></a>
+    <a href="README.pt.md"><img src="https://img.shields.io/badge/lang-PT--BR-green?style=for-the-badge" alt="PT-BR" /></a>
 </p>
 
 <p align="center">
-  <a href="https://linkf.up.railway.app/">Aplicação</a> ·
-  <a href="#como-rodar-local">Como rodar</a> ·
-  <a href="#arquitetura">Arquitetura</a> ·
-  <a href="#decisões-técnicas">Decisões técnicas</a> ·
-  <a href="https://www.linkedin.com/in/leonardolima-art/">Linkedin</a>
+  <a href="https://linkf.up.railway.app/">App</a> ·
+  <a href="#how-to-run-locally">How to run</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#technical-decisions">Technical decisions</a> ·
+  <a href="https://www.linkedin.com/in/leonardolima-art/">LinkedIn</a>
 </p>
 
 <p align="center">
-  <img src="railway-dashboard.png" alt="Arquitetura no Railway" width="900" />
+  <img src="railway-dashboard.png" alt="Railway Architecture" width="900" />
 </p>
 
 ---
 
-## Sobre o projeto
+## About the project
 
-LinkForge é um encurtador de URL. Apesar da ideia ser simples, o verdadeiro proposito é a arquitetura por trás dela.
+LinkForge is a URL shortener. The idea is simple on purpose, the real point is the architecture behind it.
 
-Construí esse projeto para praticar arquitetura de microsserviços, sistemas escaláveis (horizontal e vertical), Clean Architecture, DDD e, principalmente, como projetar sistemas considerando que eles **vão falhar**. A intenção era ir além de mais um repositório esquecido no GitHub. Queria algo em produção, acessível para qualquer pessoa testar.
+I built this project to practice microservices architecture, scalable systems (both horizontally and vertically), Clean Architecture, DDD and, above all, how to design systems assuming they **will fail**. The goal was to go beyond just another forgotten GitHub repository. I wanted something running in production, accessible for anyone to try.
 
-Algumas decisões aqui são over-engineered de propósito. Um encurtador simples não exigiria três níveis de cache, fallback via gRPC ou idempotência no produtor Kafka. Foram escolhas feitas para exercitar conceitos. Cheguei a considerar multi-região, mas o orçamento do Railway (US$ 5/mês para o projeto inteiro) não comporta para esse cenário, por enquanto.
+Some decisions here are over-engineered on purpose. A simple shortener would not require three cache layers, a gRPC fallback or an idempotent Kafka producer. These were choices made to exercise concepts. I even considered multi-region, but the Railway budget (US$ 5/month for the whole project) does not cover that scenario for now.
 
 ## Features
 
-Hoje o usuário consegue:
+What the user can do today:
 
-- Encurtar uma URL
-- Acessar o link curto e ser redirecionado
+- Shorten a URL
+- Access the short link and get redirected
 
-Como funciona:
+How it works under the hood:
 
-- **Cache em 3 níveis** no caminho do redirect: Redis (L1), Postgres (L2) e gRPC fallback (L3)
-- **Singleflight** no redirect, se milhões de requisições chegam simultaneamente pelo mesmo `shortCode`, apenas uma vai ao banco e o resultado é replicado para as demais
-- **Event-driven** entre serviços. O Shortener publica `link.created` no Kafka, o Redirect consome e popula o próprio banco. Sem acoplamento direto
-- **Fallback gRPC** caso o Kafka falhe. O Redirect ainda resolve o link consultando o Shortener via RPC, garantindo consistência
-- **Produtor Kafka idempotente** e **schema versioning** no evento. O consumidor descarta versões não suportadas
-- **Rate limiting** em todos os serviços/api, proteção contra abuso e contra esgotar o orçamento
-- **Health checks** (`/health` liveness e `/ready` readiness com Postgres e Redis), API key entre serviços e CORS configurado
+- **3-level cache** on the redirect path: Redis (L1), Postgres (L2) and gRPC fallback (L3)
+- **Singleflight** in the redirect, if millions of requests hit the same `shortCode` simultaneously, only one goes to the database and the result is replicated to the others
+- **Event-driven** between services. The Shortener publishes `link.created` to Kafka, the Redirect consumes and populates its own database. No direct coupling
+- **gRPC fallback** in case Kafka fails. The Redirect still resolves the link by querying the Shortener via RPC, ensuring consistency
+- **Idempotent Kafka producer** and **schema versioning** in the event. The consumer drops unsupported versions
+- **Rate limiting** on every service/api, protection against abuse and against exhausting the budget
+- **Health checks** (`/health` liveness and `/ready` readiness with Postgres and Redis), API key between services and CORS configured
 
-## Arquitetura
+## Architecture
 
-Cada microsserviço tem seu próprio Postgres e seu próprio Redis. Os dados não são compartilhados diretamente entre os serviços. O Shortener publica eventos no Kafka e o Redirect consome para popular o próprio banco. Caso o Kafka falhe, o Redirect recorre ao gRPC como fallback.
+Each microservice has its own Postgres and its own Redis. Data is not shared directly between services. The Shortener publishes events to Kafka and the Redirect consumes them to populate its own database. If Kafka fails, the Redirect falls back to gRPC.
 
 ```mermaid
 flowchart TB
@@ -74,40 +74,40 @@ flowchart TB
     Redirect -.->|"L3 fallback gRPC"| Shortener
 ```
 
-### Serviços
+### Services
 
-- **LinkForge.Shortener** (.NET 10): write path. Recebe a URL, valida, gera o `shortCode`, persiste e publica o evento. A carga é previsível e a escala vertical faz mais sentido nesse perfil.
-- **LinkForge.Redirect** (Go): hot path. Resolve `shortCode → URL` com baixa latência. Stateless, escala horizontal sem complicações.
-- **LinkForge.Frontend** (React): interface para criação e acesso aos links.
-- **Kafka/Redpanda**: barramento de eventos que desacopla Shortener e Redirect.
+- **LinkForge.Shortener** (.NET 10): write path. Receives the URL, validates, generates the `shortCode`, persists and publishes the event. Load is predictable and vertical scaling makes more sense for this profile.
+- **LinkForge.Redirect** (Go): hot path. Resolves `shortCode → URL` with low latency. Stateless, scales horizontally without friction.
+- **LinkForge.Frontend** (React): interface to create and access links.
+- **Kafka/Redpanda**: event bus that decouples Shortener and Redirect.
 
-### Fluxo de encurtamento
+### Shortening flow
 
 ```mermaid
 sequenceDiagram
-    participant U as Cliente
+    participant U as Client
     participant S as Shortener
     participant DB as Postgres (Write)
     participant R as Redis
     participant K as Kafka
 
     U->>S: POST /api/links { url }
-    S->>S: Gera shortCode único
+    S->>S: Generate unique shortCode
     S->>DB: INSERT short_link
     DB-->>S: ok
     S->>R: SET cache (TTL 1h)
     S->>K: PUBLISH link.created
     S-->>U: 200 { shortCode }
-    Note over K,R: Redirect consome<br/>o evento de forma<br/>assíncrona
+    Note over K,R: Redirect consumes<br/>the event<br/>asynchronously
 ```
 
-O Shortener só retorna sucesso ao cliente depois que o link foi efetivamente persistido. Essa ordem garante que o fallback funcione. Se o Redirect cai no L3 há certeza de que o link existe na fonte da verdade.
+The Shortener only returns success to the client after the link has actually been persisted. This ordering is what guarantees the fallback works. If the Redirect hits L3, there is certainty that the link exists in the source of truth.
 
-### Fluxo de redirect (cache em 3 níveis)
+### Redirect flow (3-level cache)
 
 ```mermaid
 sequenceDiagram
-    participant U as Cliente
+    participant U as Client
     participant R as Redirect
     participant L1 as Redis (L1)
     participant L2 as Postgres (L2)
@@ -119,10 +119,10 @@ sequenceDiagram
         L1-->>R: url
     else cache miss
         R->>L2: SELECT
-        alt encontrado
+        alt found
             L2-->>R: url
             R->>L1: SET (TTL 1h)
-        else não encontrado (Kafka falhou?)
+        else not found (Kafka failed?)
             R->>L3: Resolve(shortCode)
             L3-->>R: url
             R->>L2: UPSERT
@@ -132,69 +132,69 @@ sequenceDiagram
     R-->>U: 302 → url
 ```
 
-O L3 idealmente nunca deve ser acionado. Ele existe para garantir que mesmo se o Kafka falhar na entrega do evento, o redirect continue operacional. É uma rede de segurança da arquitetura.
+The L3 should ideally never be triggered. It exists to make sure that, even if Kafka fails to deliver the event, the redirect keeps working. It is a safety net of the architecture.
 
 ## Stack
 
-- **Shortener (.NET 10)**: ASP.NET Core, EF Core (Postgres), Confluent.Kafka, gRPC server. Testes com xUnit, FluentAssertions, NSubstitute e Testcontainers.
-- **Redirect (Go 1.26)**: Gin, pgx/v5 + sqlc, go-redis/v9, segmentio/kafka-go, gRPC client, `golang.org/x/sync/singleflight`, viper, slog. Testes com testify e testcontainers-go (Postgres, Redis, Redpanda).
+- **Shortener (.NET 10)**: ASP.NET Core, EF Core (Postgres), Confluent.Kafka, gRPC server. Tests with xUnit, FluentAssertions, NSubstitute and Testcontainers.
+- **Redirect (Go 1.26)**: Gin, pgx/v5 + sqlc, go-redis/v9, segmentio/kafka-go, gRPC client, `golang.org/x/sync/singleflight`, viper, slog. Tests with testify and testcontainers-go (Postgres, Redis, Redpanda).
 - **Frontend**: React 19, Vite 8, React Router 7.
 - **Infra**: Postgres 16, Redis 7, Redpanda, Docker Compose (local), Railway (prod), GitHub Actions (CI/CD).
 
-### Por que .NET no Shortener
+### Why .NET for the Shortener
 
-.NET é minha stack principal. O ecossistema é integrado de ponta a ponta (Entity Framework, ASP.NET Core, gRPC, Kafka client), com uma única organização mantendo o conjunto. O footprint é razoável, algo entre 80 a 150MB em runtime para uma API enxuta e domínios mais ricos se beneficiam da linguagem.
+.NET is my main stack. The ecosystem is integrated end to end (Entity Framework, ASP.NET Core, gRPC, Kafka client), with a single organization maintaining the whole set. Footprint is reasonable, around 80 to 150MB at runtime for a lean API, and richer domains benefit from the expressiveness of the language.
 
-### Por que Go no Redirect
+### Why Go for the Redirect
 
-O Redirect é o hot path. Se alguém com grande número de seguidores, um influêncer, divulga um link encurtado, milhões de cliques podem chegar pelo mesmo `shortCode`. O requisito aqui é latência baixa e footprint reduzido. Goroutines começam na ordem de KB, threads .NET na ordem de MB, e essa diferença reflete diretamente no custo de infraestrutura a curto e longo prazo.
+The Redirect is the hot path. If someone with a large following, an influencer, posts a shortened link, millions of clicks can hit the same `shortCode`. The requirement here is low latency and small footprint. Goroutines start at the KB scale, .NET threads start at the MB scale, and that difference reflects directly on infrastructure cost in the short and long term.
 
-Sobre o trade off, Go é mais verboso e oferece menos abstrações prontas que .NET, mas nesse caso de uso acaba compensando.
+About the trade-off, Go is more verbose and offers fewer ready-made abstractions than .NET, but for this use case it ends up paying off.
 
-### Por que gRPC (e não HTTP) no fallback
+### Why gRPC (and not HTTP) for the fallback
 
-Menor latência, payload binário e contrato tipado via Protobuf entre os serviços. O custo é configuração mais trabalhosa, mas como o fallback é interno (serviço-a-serviço), o esforço é justificável.
+Lower latency, binary payload and a strongly typed contract via Protobuf between the services. The cost is more setup work, but since the fallback is internal (service-to-service), the effort is justified.
 
-### Por que React no frontend
+### Why React for the frontend
 
-Para este projeto qualquer framework atenderia (Svelte, Angular e outros), com impacto técnico irrelevante. Optei por React pela popularidade, quem clona o repositório encontra uma stack familiar.
+Any framework would do for this project (Svelte, Angular and others), with irrelevant technical impact. I chose React because of its popularity, whoever clones the repository finds a familiar stack.
 
-## Decisões técnicas
+## Technical decisions
 
-### Bancos separados
+### Separate databases
 
-Cada microsserviço tem seu próprio Postgres e seu próprio Redis. O Postgres do Shortener é a fonte da verdade(escrita). O Postgres do Redirect funciona como réplica lógica, populada via Kafka (leitura). Nenhum dado é compartilhado diretamente entre os serviços.
+Each microservice has its own Postgres and its own Redis. The Shortener's Postgres is the source of truth (writes). The Redirect's Postgres works as a logical replica, populated via Kafka (reads). No data is shared directly between services.
 
-### Cache armazena o objeto completo (não só a URL)
+### Cache stores the full object (not just the URL)
 
-Originalmente o cache do Shortener armazenava apenas a URL, quando implementei o fallback gRPC, surgiu a necessidade de incluir o `id` também. Se o Redirect cai no L3, ele precisa popular o próprio Postgres mantendo o mesmo `id` da fonte da verdade. Caso contrário ocorre inconsistência ou, em cenário pior, violação de chave única.
+Originally the Shortener's cache stored only the URL. When I implemented the gRPC fallback, I needed to include the `id` as well. If the Redirect falls back to L3, it needs to populate its own Postgres keeping the same `id` of the source of truth. Otherwise inconsistency happens or, worse, a unique key violation.
 
-Refatorei o cache para armazenar o objeto completo (`id`, `shortCode`, `originalUrl`, `createdAt`). Pequena mudança no schema, problema grande resolvido.
+I refactored the cache to store the full object (`id`, `shortCode`, `originalUrl`, `createdAt`). Small change in schema, big problem solved.
 
-### Produtor Kafka idempotente
+### Idempotent Kafka producer
 
-Idempotência habilitada no producer (`EnableIdempotence=true`) garante que, em caso de retry, o Kafka não duplique mensagens. Combinado com o schema versioning no payload, a evolução de contrato fica segura. O consumidor descarta versões que não conhece em vez de processá-las incorretamente.
+Idempotency enabled on the producer (`EnableIdempotence=true`) ensures that, on retry, Kafka does not duplicate messages. Combined with schema versioning in the payload, contract evolution stays safe. The consumer drops versions it does not understand instead of processing them incorrectly.
 
-### Rate limiting como proteção de orçamento
+### Rate limiting as budget protection
 
-Não é só mecanismo de segurança contra DDoS, é proteção direta do budget no railway. Em ambientes cloud, requisições mal intencionadas custam dinheiro. Em produção utilizo 10 RPS com burst de 20 no Redirect, e 10 criações por janela de 30 segundos no Shortener. Todos os valores são configuráveis via variáveis de ambiente.
+It is not just a security mechanism against DDoS, it is direct protection of the Railway budget. In cloud environments, malicious requests cost real money. In production I use 10 RPS with burst of 20 on the Redirect, and 10 creations per 30-second window on the Shortener. All values are configurable via environment variables.
 
-### Redirect é stateless
+### Redirect is stateless
 
-Não retém estado em memória entre requisições. Subir várias instâncias do Redirect é só questão de configuração no Railway, o singleflight opera por instância, dispensando coordenação distribuída.
+It does not keep state in memory between requests. Spinning up multiple Redirect instances is just a matter of configuration on Railway, the singleflight operates per instance, with no need for distributed coordination.
 
-## Modelo de dados
+## Data model
 
-**Tabela `short_links`** (em ambos os Postgres):
+**Table `short_links`** (on both Postgres):
 
-| Campo | Tipo | Observação |
+| Field | Type | Note |
 |---|---|---|
 | `id` | UUID | PK |
-| `short_code` | TEXT | Único, indexado |
+| `short_code` | TEXT | Unique, indexed |
 | `original_url` | TEXT | |
 | `created_at` | TIMESTAMP | |
 
-**Tópico Kafka `linkforge.links.created`**, payload JSON:
+**Kafka topic `linkforge.links.created`**, JSON payload:
 
 ```json
 {
@@ -206,42 +206,42 @@ Não retém estado em memória entre requisições. Subir várias instâncias do
 }
 ```
 
-A `key` da mensagem é o `short_code`, garantindo ordenação dentro da mesma chave.
+The message `key` is the `short_code`, ensuring ordering within the same key.
 
 ## API
 
 ### `POST /api/links`
 
-Cria um link curto.
+Creates a short link.
 
 ```bash
 curl -X POST https://linkf.up.railway.app/api/links \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/uma-url-bem-longa"}'
+  -d '{"url": "https://example.com/some-really-long-url"}'
 ```
 
-Resposta:
+Response:
 ```json
 { "shortCode": "abc12345" }
 ```
 
 ### `GET /r/{shortCode}`
 
-Redireciona para a URL original (HTTP 302). Retorna 404 se o código não existir.
+Redirects to the original URL (HTTP 302). Returns 404 if the code does not exist.
 
-### `GET /health` e `GET /ready` (Redirect)
+### `GET /health` and `GET /ready` (Redirect)
 
-`/health` retorna 200 enquanto o processo está em execução. `/ready` testa Postgres e Redis antes de responder, sendo utilizado pelo Railway para orquestração.
+`/health` returns 200 while the process is alive. `/ready` checks Postgres and Redis before responding, used by Railway for orchestration.
 
-### gRPC `LinkService.Resolve` (interno)
+### gRPC `LinkService.Resolve` (internal)
 
-Não exposto publicamente. Utilizado pelo Redirect no L3 fallback. Contrato definido em [proto/linkforge/v1/link_service.proto](proto/linkforge/v1/link_service.proto), protegido por API key.
+Not publicly exposed. Used by the Redirect on the L3 fallback. Contract defined in [proto/linkforge/v1/link_service.proto](proto/linkforge/v1/link_service.proto), protected by API key.
 
-## Como rodar local
+## How to run locally
 
-### Docker (recomendado)
+### Docker (recommended)
 
-Precisa apenas de **Docker**. Todo o ambiente sobe via Compose.
+Only **Docker** is required. The whole environment comes up via Compose.
 
 ```bash
 git clone https://github.com/leonardolimaArt/linkforge.git
@@ -250,14 +250,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
-URLs após a inicialização:
+URLs after initialization:
 
-| Serviço | URL |
+| Service | URL |
 |---|---|
 | Frontend | http://localhost:3000 |
 | Shortener API | http://localhost:8080 |
 | Redirect | http://localhost:8081 |
-| Redpanda Console (UI dos tópicos Kafka) | http://localhost:8090 |
+| Redpanda Console (Kafka topics UI) | http://localhost:8090 |
 | Postgres (Shortener) | localhost:5432 |
 | Postgres (Redirect) | localhost:5433 |
 | Redis (Shortener) | localhost:6379 |
@@ -265,76 +265,75 @@ URLs após a inicialização:
 
 ### Local
 
-Frameworks e bibliotecas são restaurados pelo gerenciador de pacotes do serviço.
+Frameworks and libraries are restored by each service's package manager.
 
-| Serviço | SDK | Frameworks principais | Ferramentas secundarias | Setup |
+| Service | SDK | Main frameworks | Optional tools | Setup |
 |---|---|---|---|---|
 | Shortener | .NET SDK 10 | ASP.NET Core, EF Core (Npgsql), Confluent.Kafka, Grpc.AspNetCore, Grpc.Tools, Scalar.AspNetCore, xUnit, FluentAssertions, NSubstitute, Testcontainers | `dotnet-ef` (migrations) | `dotnet restore LinkForge.Shortener/LinkForge.Shortener.slnx` |
-| Redirect | Go 1.26+ | Gin, pgx/v5, sqlc-gen, go-redis/v9, segmentio/kafka-go, gRPC, singleflight, viper, slog, testify, testcontainers-go | `sqlc`, `protoc`+`protoc-gen-go`+`protoc-gen-go-grpc`, `make` (regen de código) | `cd LinkForge.Redirect && go mod download` |
+| Redirect | Go 1.26+ | Gin, pgx/v5, sqlc-gen, go-redis/v9, segmentio/kafka-go, gRPC, singleflight, viper, slog, testify, testcontainers-go | `sqlc`, `protoc`+`protoc-gen-go`+`protoc-gen-go-grpc`, `make` (code regen) | `cd LinkForge.Redirect && go mod download` |
 | Frontend | Node 24+ | React 19, Vite 8, React Router 7, FontAwesome, ESLint | — | `cd LinkForge.FrontEnd && npm ci` |
 
-Os arquivos gerados do gRPC (`.pb.go` e `LinkServiceGrpc.cs`) são versionados. Para gerar, deve rodar `make proto-gen` em `LinkForge.Redirect/`. O workflow `proto-check.yml` valida no CI que estão atualizados.
+The generated gRPC files (`.pb.go` and `LinkServiceGrpc.cs`) are versioned. To regenerate, run `make proto-gen` inside `LinkForge.Redirect/`. The `proto-check.yml` workflow validates in CI that they are up to date.
 
-Docker continua necessário para os testes de integração, Postgres, Redis e Redpanda em containers descartáveis via Testcontainers.
+Docker is still required for integration tests, since Postgres, Redis and Redpanda run as disposable containers via Testcontainers.
 
-## Testes
+## Tests
 
-Cobertura focada nas features. Para executar pode ser pelos comandos abaixo ou pelo explorador de testes se estiver usando vscode:
+Coverage focused on the features. To execute, use the commands below or the test explorer if you are on VS Code:
 
-**Shortener (.NET)**, unit e integration com Testcontainers:
+**Shortener (.NET)**, unit and integration with Testcontainers:
 ```bash
 dotnet test LinkForge.Shortener/LinkForge.Shortener.slnx
 ```
 
-**Redirect (Go)**, unit e integration com testcontainers-go:
+**Redirect (Go)**, unit and integration with testcontainers-go:
 ```bash
 cd LinkForge.Redirect
 go test ./internal/... -race
 go test ./test/integration/...
 ```
 
-Os testes de integração sobem Postgres, Redis e Redpanda em containers descartáveis, então o Docker precisa estar em execução.
+Integration tests spin up Postgres, Redis and Redpanda as disposable containers, so Docker must be running.
 
 ## CI/CD
 
-GitHub Actions com **4 workflows separados** para deploy independente:
+GitHub Actions with **4 separate workflows** for independent deploys:
 
-- `shortener.yml`: build, test e deploy do Shortener
-- `redirect.yml`: build, test (unit e integration) e deploy do Redirect
-- `frontend.yml`: lint, build e deploy do Frontend
-- `proto-check.yml`: valida que os arquivos gerados do Protobuf estão sincronizados com `.proto`
+- `shortener.yml`: build, test and deploy of the Shortener
+- `redirect.yml`: build, test (unit and integration) and deploy of the Redirect
+- `frontend.yml`: lint, build and deploy of the Frontend
+- `proto-check.yml`: validates that the generated Protobuf files are in sync with `.proto`
 
-Cada workflow utiliza **path filters**, disparando apenas quando há alterações no respectivo serviço (ou no contrato proto compartilhado). Deploy automático no merge para `main`, com aprovação manual no environment de produção.
+Each workflow uses **path filters**, firing only when something in the respective service (or in the shared proto contract) changes. Automatic deploy on merge to `main`, with manual approval in the production environment.
 
-## Custo no Railway
+## Railway cost
 
-O projeto roda no plano de US$ 5/mês. Para um portfólio, atende com folga. O Railway entrega hardware competente mesmo no plano básico, suporta escala horizontal e vertical, e aplica auto-sleep aos serviços ociosos, reduzindo o custo nas horas sem tráfego.
+The project runs on the US$ 5/month plan. For a portfolio, it is more than enough. Railway delivers competent hardware even on the basic plan, supports horizontal and vertical scaling, and applies auto-sleep to idle services, reducing cost during off-traffic hours.
 
-A escolha do Railway veio justamente disso. Replicar essa mesma arquitetura na AWS ou Azure custaria muito mais, o que não faz sentido em um projeto de portfólio. A escolha de Go no hot path e o rate limit em todos os serviços fazem parte da estratégia para ficar dentro do orçamento.
+The choice of Railway came precisely from that. Replicating this same architecture on AWS or Azure would cost several times more, which makes no sense for a portfolio project. Choosing Go for the hot path and rate limiting everywhere are part of the strategy to stay within the budget.
 
 ## Roadmap
 
-- **Identity service**: autenticação OAuth2/JWT (login com Google). Links de usuários autenticados permanecem indefinidamente, links anônimos expiram após alguns dias sem acesso
-- **Analytics service**: métricas de cliques por link, dashboard global para o dono
-- **Observabilidade**: Prometheus e Grafana para métricas
+- **Identity service**: OAuth2/JWT authentication (Google login). Authenticated users' links stay indefinitely, anonymous links expire after a few days without access
+- **Analytics service**: per-link click metrics, global dashboard for the owner
+- **Observability**: Prometheus and Grafana for metrics
 
-## Estrutura do repositório
+## Repository structure
 
-Monorepo (sou só um dev, fragmentar não traria benefício):
+Monorepo (I'm a solo dev, splitting it would bring no benefit):
 
 ```
 linkforge/
-├── .github/workflows/         # CI/CD por serviço
-├── proto/linkforge/v1/        # Contrato gRPC compartilhado
-├── LinkForge.Shortener/       # Serviço .NET (write path)
-├── LinkForge.Redirect/        # Serviço Go (hot path)
+├── .github/workflows/         # CI/CD per service
+├── proto/linkforge/v1/        # Shared gRPC contract
+├── LinkForge.Shortener/       # .NET service (write path)
+├── LinkForge.Redirect/        # Go service (hot path)
 ├── LinkForge.FrontEnd/        # React + Vite
-└── docker-compose.yml         # Ambiente local completo
+└── docker-compose.yml         # Full local environment
 ```
 
-Cada serviço tem seu próprio `Dockerfile` e pode ser feito o build e deploy individual.
+Each service has its own `Dockerfile` and can be built and deployed independently.
 
-A Clean Architecture aplicada no Shortener é pragmática. Segui os princípios sem aderir cegamente ao formato. A regra existe para servir o projeto, não o contrário.
+The Clean Architecture applied to the Shortener is pragmatic. I followed the principles without sticking blindly to the format. The rule exists to serve the project, not the other way around.
 
-[algo sobre a cidade da raposa](https://i.ytimg.com/vi/Qy5N4YJ6aVo/sddefault.jpg)
-
+[something about the fox town](https://i.ytimg.com/vi/Qy5N4YJ6aVo/sddefault.jpg)
