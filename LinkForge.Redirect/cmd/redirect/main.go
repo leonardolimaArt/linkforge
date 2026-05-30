@@ -14,6 +14,7 @@ import (
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/config"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/consumer"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/handler"
+	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/origin"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/repository/postgres"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/server"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/service"
@@ -45,10 +46,23 @@ func main() {
 	}
 	defer redisClient.Close()
 
+	originClient, err := origin.NewGrpcClient(
+		cfg.ShortenerGRPCAddr,
+		cfg.APIKey,
+		cfg.OriginTimeout,
+	)
+
+	if err != nil {
+		logger.Error("failed to create origin client", "error", err)
+		os.Exit(1)
+	}
+
+	defer originClient.Close()
+
 	queries := postgres.New(pool)
 	repo := postgres.NewPgRepository(queries)
 	redisCache := cache.NewRedisCache(redisClient)
-	svc := service.NewRedirectService(repo, redisCache)
+	svc := service.NewRedirectService(repo, redisCache, originClient, logger)
 
 	redirectHandler := handler.NewRedirectHandler(svc)
 	healthHandler := handler.NewHealthHandler(pool, redisClient)

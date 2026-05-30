@@ -20,11 +20,14 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	pgcontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
 	rediscontainer "github.com/testcontainers/testcontainers-go/modules/redis"
+	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/cache"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/config"
+	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/domain"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/handler"
+	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/origin"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/repository/postgres"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/server"
 	"github.com/leonardolimaArt/linkforge/LinkForge.Redirect/internal/service"
@@ -40,10 +43,19 @@ CREATE TABLE short_links (
 `
 
 var (
-	testPool   *pgxpool.Pool
-	testRedis  *redis.Client
-	testRouter *gin.Engine
+	testPool         *pgxpool.Pool
+	testRedis        *redis.Client
+	testRouter       *gin.Engine
+	testKafkaBrokers []string
 )
+
+type noopOrigin struct{}
+
+func (noopOrigin) Resolve(_ context.Context, _ string) (*domain.ShortLink, error) {
+	return nil, origin.ErrOriginNotFound
+}
+
+func (noopOrigin) Close() error { return nil }
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -73,6 +85,22 @@ func TestMain(m *testing.M) {
 		fmt.Printf("failed to start redis: %v\n", err)
 		os.Exit(1)
 	}
+
+	rpC, err := redpanda.Run(ctx,
+		"redpandadata/redpanda:v24.2.4",
+		redpanda.WithAutoCreateTopics(),
+	)
+	if err != nil {
+		fmt.Printf("failed to start redpanda: %v\n", err)
+		os.Exit(1)
+	}
+
+	seedBroker, err := rpC.KafkaSeedBroker(ctx)
+	if err != nil {
+		fmt.Printf("failed to get kafka seed broker: %v\n", err)
+		os.Exit(1)
+	}
+	testKafkaBrokers = []string{seedBroker}
 
 	redisHost, err := redisC.Host(ctx)
 	if err != nil {
@@ -104,7 +132,8 @@ func TestMain(m *testing.M) {
 	queries := postgres.New(testPool)
 	repo := postgres.NewPgRepository(queries)
 	redisCache := cache.NewRedisCache(testRedis)
-	svc := service.NewRedirectService(repo, redisCache)
+	testLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := service.NewRedirectService(repo, redisCache, noopOrigin{}, testLogger)
 	redirectHandler := handler.NewRedirectHandler(svc)
 	healthHandler := handler.NewHealthHandler(testPool, testRedis)
 
@@ -115,7 +144,6 @@ func TestMain(m *testing.M) {
 		AdminAPIKey:        "",
 	}
 
-	testLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	gin.SetMode(gin.TestMode)
 	testRouter = server.New(testCfg, testLogger, redirectHandler, healthHandler)
 
@@ -125,6 +153,7 @@ func TestMain(m *testing.M) {
 	testRedis.Close()
 	_ = pgC.Terminate(ctx)
 	_ = redisC.Terminate(ctx)
+	_ = rpC.Terminate(ctx)
 
 	os.Exit(code)
 
