@@ -1,0 +1,43 @@
+name: Proto Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proto/**'
+      - 'LinkForge.Redirect/gen/**'
+      - 'makefile'
+
+jobs:
+  check:
+    name: Verify generated files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Install protoc
+        run: |
+          PROTOC_VERSION=28.3
+          curl -sLO https://github.com/protocolbuffers/protobuf/releases/download/v$PROTOC_VERSION/protoc-$PROTOC_VERSION-linux-x86_64.zip
+          unzip protoc-$PROTOC_VERSION-linux-x86_64.zip -d $HOME/protoc
+          echo "$HOME/protoc/bin" >> $GITHUB_PATH
+
+      - name: Install Go plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - run: make proto-gen
+
+      - name: Verify no diff
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "Generated proto files are outdated. Run 'make proto-gen' and commit."
+            git diff
+            exit 1
+          fi
