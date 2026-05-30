@@ -44,6 +44,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+      - "5001:5001"
     environment:
       - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
@@ -80,6 +81,9 @@ services:
       - KAFKA_BROKERS=redpanda:9092
       - KAFKA_TOPIC=linkforge.links.created
       - KAFKA_GROUP_ID=redirect-service
+      - SHORTENER_GRPC_ADDR=api:5001
+      - API_KEY=${API_KEY}
+      - ORIGIN_TIMEOUT_SECONDS=2
     depends_on:
       db:
         condition: service_healthy

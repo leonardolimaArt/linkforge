@@ -1,4 +1,4 @@
-using Application.UseCases.RedirectLink;
+using Application.UseCases.ResolveShortLink;
 using Application.UseCases.ShortenLink;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +10,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<ShortenLinkHandler>();
-        services.AddScoped<RedirectLinkHandler>();
+        services.AddScoped<ResolveShortLinkHandler>();
 
         return services;
     }

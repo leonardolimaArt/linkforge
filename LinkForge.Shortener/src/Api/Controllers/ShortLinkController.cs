@@ -1,4 +1,4 @@
-using Application.UseCases.RedirectLink;
+using Application.UseCases.ResolveShortLink;
 using Application.UseCases.ShortenLink;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,11 +9,11 @@ namespace Api.Controllers;
 public class ShortLinkController : ControllerBase
 {
     private readonly ShortenLinkHandler _shortenHandler;
-    private readonly RedirectLinkHandler _redirectHandler;
+    private readonly ResolveShortLinkHandler _resolveHandler;
 
-    public ShortLinkController(ShortenLinkHandler shortenHandler, RedirectLinkHandler redirectHandler)
+    public ShortLinkController(ShortenLinkHandler shortenHandler,  ResolveShortLinkHandler resolveHandler)
     {
-        _redirectHandler = redirectHandler;
+        _resolveHandler = resolveHandler;
         _shortenHandler = shortenHandler;
     }
 
@@ -28,11 +28,11 @@ public class ShortLinkController : ControllerBase
     [HttpGet("/r/{shortCode}")]
     public async Task<IActionResult> RedirectLink([FromRoute] string shortCode, CancellationToken cancellationToken)
     {
-        var url = await _redirectHandler.HandleAsync(new RedirectLinkQuery(shortCode), cancellationToken);
+        var url = await _resolveHandler.HandleAsync(new ResolveShortLinkQuery(shortCode), cancellationToken);
 
         if (url is null)
             return NotFound();
 
-        return Redirect(url);
+        return Redirect(url.OriginalUrl);
     }
 }
