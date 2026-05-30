@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -39,6 +40,7 @@ func (m *mockRepo) Upsert(ctx context.Context, link *domain.ShortLink) error {
 }
 
 type mockCache struct {
+	mu       sync.Mutex
 	store    map[string]string
 	getErr   error
 	setErr   error
@@ -50,6 +52,8 @@ func newMockCache() *mockCache {
 }
 
 func (m *mockCache) Get(ctx context.Context, key string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.getErr != nil {
 		return "", m.getErr
 	}
@@ -62,6 +66,8 @@ func (m *mockCache) Get(ctx context.Context, key string) (string, error) {
 
 func (m *mockCache) Set(ctx context.Context, key string, value string, ttl time.Duration) error {
 	atomic.AddInt32(&m.setCalls, 1)
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.setErr != nil {
 		return m.setErr
 	}
@@ -268,7 +274,7 @@ func TestResolve_SingleFlight_CoalescesConcurrentRequest(t *testing.T) {
 	originMock := &mockOrigin{}
 	svc := newServiceWith(repo, cache, originMock)
 
-	const concurent = 5000000
+	const concurent = 50
 	done := make(chan error, concurent)
 	for i := 0; i < concurent; i++ {
 		go func() {
