@@ -104,7 +104,7 @@ function App(){
         <p className="socialsLabel">2026 - Desenvolvido por Leonardo Lima</p>
 
         <div className="socialsIcons">
-          <a href="https://github.com/leonardolimaArt" target="_blank" className="socialButton" aria-label="Github">
+          <a href="https://github.com/leonardolimaArt/linkforge" target="_blank" className="socialButton" aria-label="Github">
             <FontAwesomeIcon icon={faGithub} size="lg"/>
           </a>
           <a href="https://www.linkedin.com/in/leonardolima-art" target="_blank" className="socialButton" aria-label="LinkedIn">
