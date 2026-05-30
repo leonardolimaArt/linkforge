@@ -58,6 +58,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm install -g @railway/cli
-      - run: railway up --service ${{ vars.RAILWAY_SHORTENER_SERVICE_ID }} --environment production --detach
+      - run: railway up --service ${{ secrets.RAILWAY_SHORTENER_SERVICE_ID }} --environment production --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PRD }}
