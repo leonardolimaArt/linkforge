@@ -3,14 +3,16 @@
 </p>
 
 <p align="center">
-  Orgulhosamente feito do zero
+  <a href="README.md"><img src="https://img.shields.io/badge/lang-PT--BR-green?style=for-the-badge" alt="PT-BR" /></a>
+  <a href="README.en.md"><img src="https://img.shields.io/badge/lang-EN-lightgrey?style=for-the-badge" alt="EN" /></a>
 </p>
 
 <p align="center">
   <a href="https://linkf.up.railway.app/">Aplicação</a> ·
   <a href="#como-rodar-local">Como rodar</a> ·
   <a href="#arquitetura">Arquitetura</a> ·
-  <a href="#decisões-técnicas">Decisões técnicas</a>
+  <a href="#decisões-técnicas">Decisões técnicas</a> ·
+  <a href="https://www.linkedin.com/in/leonardolima-art/">Linkedin</a>
 </p>
 
 <p align="center">
