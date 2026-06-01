@@ -22,8 +22,16 @@ public static class DependencyInjection
         services.AddScoped<ILinkCache, LinkCache>();
 
         services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
-        services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
-        
+        var kafkaEnabled = configuration.GetValue<bool?>("Kafka:Enabled") ?? true;
+        if (kafkaEnabled)
+        {
+            services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+        }
+        else
+        {
+            services.AddSingleton<IEventPublisher, NoopEventPublisher>();
+        }
+
         return services;
     }
 }
