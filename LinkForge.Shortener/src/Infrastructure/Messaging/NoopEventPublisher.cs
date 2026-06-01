@@ -10,7 +10,7 @@ public class NoopEventPublisher : IEventPublisher
     public NoopEventPublisher(ILogger<NoopEventPublisher> logger)
     {
         _logger = logger;
-        _logger.LogInformation("Kafka disabled — using NoopEventPublisher (events will be dropped)");
+        _logger.LogInformation("Kafka disabled — using NoopEventPublisher (events will be dropped ;D )");
     }
 
     public Task PublishAsync<T>(string key, T payload, CancellationToken cancellationToken = default)
