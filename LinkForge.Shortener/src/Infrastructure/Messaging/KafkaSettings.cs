@@ -2,6 +2,7 @@ namespace Infrastructure.Messaging;
 
 public class KafkaSettings
 {
+    public bool Enabled {get; set;} = true;
     public string BootstrapServers {get; set;} = string.Empty;
     public string SaslMechanism {get; set;} = string.Empty;
 
