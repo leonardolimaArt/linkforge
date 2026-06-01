@@ -74,27 +74,36 @@ func main() {
 		Handler: engine,
 	}
 
-	kafkaConsumer := consumer.NewKafkaConsumer(
-		consumer.Config{
-			Brokers: cfg.KafkaBrokers,
-			Topic:   cfg.KafkaTopic,
-			GroupID: cfg.KafkaGroupID,
-		},
-		repo,
-		redisCache,
-		logger,
-	)
-	defer kafkaConsumer.Close()
-
-	consumerCtx, cancelConsumer := context.WithCancel(context.Background())
+	var kafkaConsumer *consumer.KafkaConsumer
+	var cancelConsumer context.CancelFunc
 	consumerDone := make(chan struct{})
 
-	go func() {
-		defer close(consumerDone)
-		if err := kafkaConsumer.Run(consumerCtx); err != nil {
-			logger.Error("consumer stopped with error", "erro", err)
-		}
-	}()
+	if cfg.KafkaEnabled {
+		kafkaConsumer = consumer.NewKafkaConsumer(
+			consumer.Config{
+				Brokers: cfg.KafkaBrokers,
+				Topic:   cfg.KafkaTopic,
+				GroupID: cfg.KafkaGroupID,
+			},
+			repo,
+			redisCache,
+			logger,
+		)
+		defer kafkaConsumer.Close()
+
+		var consumerCtx context.Context
+		consumerCtx, cancelConsumer = context.WithCancel(context.Background())
+
+		go func() {
+			defer close(consumerDone)
+			if err := kafkaConsumer.Run(consumerCtx); err != nil {
+				logger.Error("consumer stopped with error", "erro", err)
+			}
+		}()
+	} else {
+		logger.Info("kafka disabled — consumer not started")
+		close(consumerDone)
+	}
 
 	go func() {
 		logger.Info("server starting", "port", cfg.Port)
@@ -110,14 +119,16 @@ func main() {
 
 	logger.Info("shuttingdown signal received")
 
-	logger.Info("stopping kafka consumer")
-	cancelConsumer()
+	if cancelConsumer != nil {
+		logger.Info("stopping kafka consumer")
+		cancelConsumer()
 
-	select {
-	case <-consumerDone:
-		logger.Info("kafka consumer stopped gracefully")
-	case <-time.After(10 * time.Second):
-		logger.Warn("kafka consumer did not sotp within timeout, proceeding")
+		select {
+		case <-consumerDone:
+			logger.Info("kafka consumer stopped gracefully")
+		case <-time.After(10 * time.Second):
+			logger.Warn("kafka consumer did not sotp within timeout, proceeding")
+		}
 	}
 
 	logger.Info("shutting down http server")
